@@ -68,9 +68,12 @@ export default function AdminLogin() {
 
 function AdminDashboard() {
   const [contacts, setContacts] = useState<any[]>([]);
+  const [deletionRequests, setDeletionRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingDeletions, setLoadingDeletions] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'contacts' | 'deletions'>('contacts');
 
   const fetchContacts = async () => {
     try {
@@ -90,9 +93,28 @@ function AdminDashboard() {
     }
   };
 
+  const fetchDeletionRequests = async () => {
+    try {
+      const response = await fetch('/api/deletion-requests');
+      if (response.ok) {
+        const data = await response.json();
+        setDeletionRequests(data);
+      } else {
+        console.error('Failed to fetch deletion requests');
+        setDeletionRequests([]);
+      }
+    } catch (error) {
+      console.error('Error fetching deletion requests:', error);
+      setDeletionRequests([]);
+    } finally {
+      setLoadingDeletions(false);
+    }
+  };
+
   // Fetch real data from Firebase
   useEffect(() => {
     fetchContacts();
+    fetchDeletionRequests();
   }, []);
 
   const handleDelete = async (id: string) => {
@@ -149,58 +171,154 @@ function AdminDashboard() {
       {/* Dashboard Content */}
       <div className="container mx-auto px-6 py-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
-          Contact Form Submissions
+          Admin Dashboard
         </h1>
 
-        {loading ? (
-          <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-300">Loading submissions...</p>
-          </div>
-        ) : contacts.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg text-center">
-            <p className="text-gray-600 dark:text-gray-300">No contact submissions yet.</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {contacts.map((contact) => (
-              <div key={contact.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg relative">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Contact #{contact.id}
-                  </h3>
-                  <button
-                    onClick={() => confirmDelete(contact.id)}
-                    disabled={deleting === contact.id}
-                    className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
-                  >
-                    {deleting === contact.id ? 'Deleting...' : 'Delete'}
-                  </button>
-                </div>
-                
-                <div className="grid md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Name</label>
-                    <p className="text-gray-900 dark:text-white">{contact.name}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</label>
-                    <p className="text-gray-900 dark:text-white">{contact.email}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Date</label>
-                    <p className="text-gray-900 dark:text-white">
-                      {new Date(contact.timestamp).toLocaleDateString()} {new Date(contact.timestamp).toLocaleTimeString()}
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Message</label>
-                  <p className="text-gray-900 dark:text-white mt-1">{contact.message}</p>
-                </div>
+        {/* Tabs */}
+        <div className="flex space-x-1 mb-8">
+          <button
+            onClick={() => setActiveTab('contacts')}
+            className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+              activeTab === 'contacts'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+            }`}
+          >
+            Contact Submissions ({contacts.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('deletions')}
+            className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+              activeTab === 'deletions'
+                ? 'bg-red-600 text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+            }`}
+          >
+            Data Deletion Requests ({deletionRequests.length})
+          </button>
+        </div>
+
+        {/* Contact Submissions Tab */}
+        {activeTab === 'contacts' && (
+          <>
+            {loading ? (
+              <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                <p className="text-gray-600 dark:text-gray-300">Loading submissions...</p>
               </div>
-            ))}
-          </div>
+            ) : contacts.length === 0 ? (
+              <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg text-center">
+                <p className="text-gray-600 dark:text-gray-300">No contact submissions yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {contacts.map((contact) => (
+                  <div key={contact.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg relative">
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        Contact #{contact.id}
+                      </h3>
+                      <button
+                        onClick={() => confirmDelete(contact.id)}
+                        disabled={deleting === contact.id}
+                        className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+                      >
+                        {deleting === contact.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </div>
+                    
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Name</label>
+                        <p className="text-gray-900 dark:text-white">{contact.name}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</label>
+                        <p className="text-gray-900 dark:text-white">{contact.email}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Date</label>
+                        <p className="text-gray-900 dark:text-white">
+                          {new Date(contact.timestamp).toLocaleDateString()} {new Date(contact.timestamp).toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Message</label>
+                      <p className="text-gray-900 dark:text-white mt-1">{contact.message}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Data Deletion Requests Tab */}
+        {activeTab === 'deletions' && (
+          <>
+            {loadingDeletions ? (
+              <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+                <p className="text-gray-600 dark:text-gray-300">Loading deletion requests...</p>
+              </div>
+            ) : deletionRequests.length === 0 ? (
+              <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg text-center">
+                <p className="text-gray-600 dark:text-gray-300">No data deletion requests yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {deletionRequests.map((request) => (
+                  <div key={request.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-red-500">
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                        <svg className="w-5 h-5 text-red-600 dark:text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        Deletion Request #{request.id}
+                      </h3>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        request.status === 'pending' 
+                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+                          : request.status === 'completed'
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                      }`}>
+                        {request.status || 'pending'}
+                      </span>
+                    </div>
+                    
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Name</label>
+                        <p className="text-gray-900 dark:text-white">{request.name}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</label>
+                        <p className="text-gray-900 dark:text-white">{request.email}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Date Requested</label>
+                        <p className="text-gray-900 dark:text-white">
+                          {new Date(request.timestamp).toLocaleDateString()} {new Date(request.timestamp).toLocaleTimeString()}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</label>
+                        <p className="text-gray-900 dark:text-white capitalize">{request.status || 'pending'}</p>
+                      </div>
+                    </div>
+                    {request.reason && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Reason</label>
+                        <p className="text-gray-900 dark:text-white mt-1">{request.reason}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
