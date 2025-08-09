@@ -2,13 +2,13 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB38h2hHaVaqrGpotg7k1xLGPEaB6n-IJA",
-  authDomain: "ev-charger-326db.firebaseapp.com",
-  projectId: "ev-charger-326db",
-  storageBucket: "ev-charger-326db.firebasestorage.app",
-  messagingSenderId: "505620534225",
-  appId: "1:505620534225:web:5901c8b772afdad7a5c6f0",
-  measurementId: "G-QELQD0YDV8"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
